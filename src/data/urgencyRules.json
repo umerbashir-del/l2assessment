@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "thresholds": {
+    "medium": 1,
+    "high": 3
+  },
+  "context": {
+    "contrastWords": ["but", "however", "though"],
+    "negationWords": ["no", "not", "never", "without", "isn't", "wasn't", "aren't", "weren't"],
+    "resolutionWords": ["resolved", "fixed", "restored"],
+    "unresolvedPhrases": ["not resolved", "still happening", "still down"],
+    "postNegationPhrases": ["is not happening", "isn't happening", "did not happen"],
+    "uncertaintyWords": ["maybe", "might", "possibly", "possible", "suspect", "suspected", "if"],
+    "denialPhrases": ["server is not down", "service is not down", "site is not down", "website is not down"]
+  },
+  "signals": [
+    {
+      "id": "service_outage",
+      "points": 3,
+      "phrases": ["outage", "production server down", "production server is down"],
+      "phraseGroups": [
+        {
+          "subjects": ["production", "prod", "server", "database", "website", "site", "service", "system"],
+          "links": ["", "is"],
+          "states": ["down", "offline", "unavailable"]
+        }
+      ]
+    },
+    {
+      "id": "database_failure",
+      "points": 3,
+      "phrases": ["database connection lost", "server connection lost"]
+    },
+    {
+      "id": "critical_data_or_security",
+      "points": 3,
+      "phrases": ["data loss", "security breach", "account compromised"]
+    },
+    {
+      "id": "access_failure",
+      "points": 3,
+      "failurePhrases": ["can't access", "cannot access", "unable to access", "no access", "can't log in", "cannot log in", "unable to log in", "can't log into", "cannot log into", "unable to log into", "can't login", "cannot login", "unable to login", "locked out", "can't reach", "cannot reach", "unable to reach"]
+    },
+    {
+      "id": "billing_problem",
+      "points": 1,
+      "phrases": ["payment failed", "payments are failing", "payment is failing", "charged twice", "charge twice", "billing issue"],
+      "failurePhrases": ["no refund", "refund not received", "not received my refund", "not received the refund", "not received a refund", "still waiting for refund", "refund request", "would like a refund"]
+    },
+    {
+      "id": "technical_problem",
+      "points": 1,
+      "phrases": ["error", "bug", "crash", "crashed", "crashing", "broken", "timeout", "timing out", "slow", "slowly", "issue", "problem"],
+      "failurePhrases": ["not working", "won't load", "loading forever"]
+    }
+  ],
+  "routinePhrases": ["thank", "thanks", "appreciate", "happy", "love", "great", "excellent", "wonderful", "positive feedback", "feature request", "could you add", "would love to see", "suggestion", "wish", "improve"]
+}

@@ -62,12 +62,30 @@ Support teams waste time manually reading and triaging customer messages. This t
 
 1. **Paste Message**: User pastes a customer support message into the text area
 2. **Analyze**: Click "Analyze Message" to process the input
-3. **Classification**: The app runs three processes in parallel:
-   - **Category Classification** (LLM): Uses Groq AI (Llama 3.3 70B) to categorize the message
-   - **Urgency Scoring** (Rule-based): Applies simple rules to determine urgency
-   - **Recommendation** (Template-based): Maps category to a recommended action
-4. **Display Results**: Shows category, urgency tag, recommended action, and AI reasoning
+3. **Classification and triage**: The app produces three results:
+   - **Category Classification**: Uses Groq AI (Llama 3.3 70B) when available, or local rules when it is unavailable
+   - **Urgency Scoring** (Rule-based): Scores configured phrases in the context of the message
+   - **Recommendation** (Template-based): Uses category, urgency, and access problems to suggest an action
+4. **Display Results**: Shows category, urgency tag, recommended action, and an explanation labeled with its source
 5. **History**: All analyses are saved to localStorage and viewable in the History tab
+
+## Local Category Fallback
+
+When the Groq key is missing or the request fails, local rules classify clear billing problems, technical problems, and feature requests. Information questions without a reported problem become General Inquiry. Messages with multiple possible categories, uncertain reports, or no clear category become Needs Review, with a manual review recommendation. Denied and resolved problems are not treated as active issues. Local results carry a "Local fallback" source label and show a "Local Rule Explanation" so they are not mistaken for AI output. Older saved results retain their original category and explanation, with an unknown source label.
+
+The seed phrases and context words are in `src/data/categoryRules.json`; the matching logic is in `src/utils/categoryFallback.js`. The "Atlas workspace" entry is an illustrative company term to replace with a real product name. Editing the seed file changes future analyses after the app rebuilds; this demo does not yet have a shared rule database or an in-app rule editor. The fallback is conservative phrase matching, not full language understanding, so a person should review uncertain results.
+
+## Urgency Rules
+
+The urgency scorer starts at **0 points**. The default phrases, point values, thresholds, and context words are in `src/data/urgencyRules.json`. The scoring logic is in `src/utils/urgencyScorer.js`. A company can add its own phrases or change point values in the data file without changing the scoring logic. A `phraseGroups` entry combines subjects, optional linking words, and states, so one data entry covers phrases such as "server down" and "database is unavailable."
+
+- Critical signals such as an outage or lost account access are worth 3 points; the default High threshold is 3.
+- Billing and technical problems are worth 1 point each; the default Medium threshold is 1. Repeated mentions of one signal count once.
+- A matched phrase is ignored when nearby wording denies it ("no outage") or says it was resolved. Questions and uncertain claims such as "Is there an outage?" are held for review rather than treated as confirmed incidents.
+- Some negative wording describes a real failure: "no access" and "not working" remain active problem signals.
+- At 0 points, clear routine messages and denied or resolved problems are Low. Unclear messages are Medium for review. Zero means no urgency evidence was detected, not proof that no problem exists.
+
+When changing the rule data, add representative positive, negative, resolved, and mixed-message examples to `src/utils/urgencyScorer.test.js` and run `node --test src/utils/urgencyScorer.test.js`. Phrase matching is a small, explainable fallback; it will not understand every wording or subtle context, so uncertain messages still need human review.
 
 
 ## Example Test Messages
