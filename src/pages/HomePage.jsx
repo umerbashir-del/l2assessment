@@ -1,30 +1,29 @@
+import { readHistory } from '../utils/historyStorage'
+import StorageWarning from '../components/StorageWarning'
 import { Link } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 function HomePage() {
-  const [stats, setStats] = useState({ total: 0, today: 0 })
-  const [recentActivity, setRecentActivity] = useState([])
-
-  useEffect(() => {
-    // Load stats from localStorage
-    const history = JSON.parse(localStorage.getItem('triageHistory') || '[]')
+  const [loaded] = useState(() => readHistory())
+  const [storageWarning, setStorageWarning] = useState(loaded.warning)
+  const history = loaded.history
     const today = new Date().toDateString()
     const todayCount = history.filter(item => 
       new Date(item.timestamp).toDateString() === today
     ).length
 
-    setStats({
+    const stats = {
       total: history.length,
       today: todayCount
-    })
+    }
 
     // Get recent 3 items
-    setRecentActivity(history.slice(-3).reverse())
-  }, [])
+    const recentActivity = history.slice(-3).reverse()
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4">
+        <StorageWarning message={storageWarning} />
         {/* Hero Section */}
         <div className="bg-white rounded-lg shadow-md p-8 mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-3">
@@ -81,7 +80,7 @@ function HomePage() {
                 "Can you add a dark mode feature?"
               ]
               const random = examples[Math.floor(Math.random() * examples.length)]
-              localStorage.setItem('exampleMessage', random)
+              try { localStorage.setItem('exampleMessage', random) } catch { setStorageWarning('Browser storage is unavailable. Paste an example directly into Analyze.') }
               window.location.href = '/analyze'
             }}
             className="bg-orange-600 text-white rounded-lg p-6 hover:bg-orange-700 transition"
@@ -112,7 +111,8 @@ function HomePage() {
                           {item.category}
                         </span>
                         <span className={`text-xs px-2 py-1 rounded ${
-                          item.urgency === 'High' ? 'bg-red-100 text-red-800' :
+                          item.urgency === 'Needs Review' ? 'bg-purple-100 text-purple-900 border border-purple-300' :
+                  item.urgency === 'High' ? 'bg-red-100 text-red-800' :
                           item.urgency === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
                           'bg-green-100 text-green-800'
                         }`}>
@@ -145,3 +145,6 @@ function HomePage() {
 }
 
 export default HomePage
+
+
+

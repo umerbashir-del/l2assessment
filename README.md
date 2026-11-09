@@ -44,7 +44,7 @@ Support teams waste time manually reading and triaging customer messages. This t
    
    Edit `.env.local` and add your Groq API key:
    ```
-   VITE_GROQ_API_KEY=gsk_your-actual-key-here
+   GROQ_API_KEY=gsk_your-actual-key-here
    ```
    
    Get your FREE API key from: https://console.groq.com/keys
@@ -122,9 +122,15 @@ Can I upgrade my subscription to the pro plan?
 The dashboard won't load when I try to access it. I've tried refreshing but it keeps timing out.
 ```
 
-## Security Note
+## Local AI backend
 
-⚠️ **Warning**: This application exposes the Groq API key in the browser (using `dangerouslyAllowBrowser: true`). This is acceptable for local development only but should **NEVER** be done in production. In a real application, API calls should be made from a secure backend server.
+Run `npm run dev -- --host 127.0.0.1 --port 5175` to serve both the app and its local `/api/classify` backend. Set `GROQ_API_KEY` in the ignored `.env.local`; optionally set `GROQ_MODEL=openai/gpt-oss-20b`. Never prefix the key with `VITE_`. Restart the server after configuration changes.
+
+The backend calls Groq with a strict JSON schema and validates categories, duplicate issues, exact evidence quotes, and completion status. AI classifies issues only: reported impact determines urgency, and local rules produce recommendations. Failed, incomplete, or invalid AI responses use local classification. Results and history label their source as **AI-based** or **Local rules**. Schema validation does not guarantee correct classification; uncertain cases still need human review.
+
+The API is provided by the Vite development server for local use. A production build alone does not include the backend and uses local fallback. Production hosting requires a separately deployed authenticated backend and server-side key configuration.
+
+Run `node --test server/classifier.test.js src/utils/*.test.js` for offline tests. `node server/live-test.js` sends three sample messages to Groq using the configured key.
 
 ## Why Groq?
 
@@ -137,3 +143,4 @@ The dashboard won't load when I try to access it. I've tried refreshing but it k
 ## License
 
 This project is for educational purposes only.
+

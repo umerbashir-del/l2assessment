@@ -1,37 +1,54 @@
+import { readHistory } from '../utils/historyStorage'
+import StorageWarning from '../components/StorageWarning'
 import { calculateAveragePerDay } from '../utils/historyMetrics'
+import { getCategories } from '../utils/categoryFallback'
+import { useState } from 'react'
 
 function DashboardPage() {
-  const history = JSON.parse(localStorage.getItem('triageHistory') || '[]')
-  const today = new Date().toDateString()
-  const todayMessages = history.filter(item =>
-    new Date(item.timestamp).toDateString() === today
-  )
-  const highUrgency = history.filter(item => item.urgency === 'High').length
-  const stats = {
-    total: history.length,
-    today: todayMessages.length,
-    highUrgencyPercent: history.length > 0 ? Math.round((highUrgency / history.length) * 100) : 0,
-    avgPerDay: calculateAveragePerDay(history)
-  }
+  const [loaded] = useState(() => readHistory())
+  const history = loaded.history
+  const storageWarning = loaded.warning
+    const today = new Date().toDateString()
+    const todayMessages = history.filter(item => 
+      new Date(item.timestamp).toDateString() === today
+    )
 
-  const categories = {}
-  const urgencyData = { High: 0, Medium: 0, Low: 0 }
-  history.forEach(item => {
-    categories[item.category] = (categories[item.category] || 0) + 1
-    urgencyData[item.urgency] = (urgencyData[item.urgency] || 0) + 1
-  })
-  const categoryData = Object.entries(categories).map(([name, count]) => ({ name, count }))
+    // Calculate stats
+    const highUrgency = history.filter(h => h.urgency === 'High').length
+
+    
+    const stats = {
+      total: history.length,
+      today: todayMessages.length,
+      highUrgencyPercent: history.length > 0 ? Math.round((highUrgency / history.length) * 100) : 0,
+      avgPerDay: calculateAveragePerDay(history)
+    }
+
+    // Category distribution
+    const categories = {}
+    history.forEach(item => {
+      getCategories(item).forEach(category => { categories[category] = (categories[category] || 0) + 1 })
+    })
+    const categoryData = Object.entries(categories).map(([name, count]) => ({ name, count }))
+
+    // Urgency breakdown
+    const urgency = { High: 0, Medium: 0, Low: 0, 'Needs Review': 0 }
+    history.forEach(item => {
+      urgency[item.urgency] = (urgency[item.urgency] || 0) + 1
+    })
+    const urgencyData = urgency
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4">
+        <StorageWarning message={storageWarning} />
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-600">Overview of message triage analytics</p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="text-sm text-gray-600 mb-1">Total Messages</div>
             <div className="text-3xl font-bold text-blue-600">{stats.total}</div>
@@ -44,10 +61,15 @@ function DashboardPage() {
             <div className="text-sm text-gray-600 mb-1">High Urgency</div>
             <div className="text-3xl font-bold text-red-600">{stats.highUrgencyPercent}%</div>
           </div>
+          <div className="bg-purple-50 border border-purple-200 rounded-lg shadow p-6">
+            <div className="text-sm text-purple-900 mb-1">Needs Review</div>
+            <div className="text-3xl font-bold text-purple-900">{urgencyData['Needs Review']}</div>
+            <div className="text-xs text-purple-800">Priority requires clarification</div>
+          </div>
           <div className="bg-white rounded-lg shadow p-6">
             <div className="text-sm text-gray-600 mb-1">Avg Per Day</div>
             <div className="text-3xl font-bold text-purple-600">{stats.avgPerDay}</div>
-            <div className="text-xs text-gray-500">Since first analysis</div>
+            <div className="text-xs text-gray-500">Since first analysis, including today</div>
           </div>
         </div>
 
@@ -87,6 +109,13 @@ function DashboardPage() {
               <div className="text-center text-gray-500 py-8">No data yet</div>
             ) : (
               <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-purple-500 rounded mr-2"></div>
+                    <span className="text-purple-900 font-semibold">Needs Review</span>
+                  </div>
+                  <span className="text-2xl font-bold text-purple-900">{urgencyData['Needs Review']}</span>
+                </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <div className="w-4 h-4 bg-red-500 rounded mr-2"></div>
@@ -134,3 +163,8 @@ function DashboardPage() {
 }
 
 export default DashboardPage
+
+
+
+
+
