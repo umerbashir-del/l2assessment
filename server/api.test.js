@@ -114,3 +114,22 @@ test('upload abort is not logged as a provider failure',async()=>{
 for(const code of ['bad_request','payload_too_large']) {
  test(`route preserves ${code}`,async()=>assert.equal((await request('{"message":"hello"}',{classify:async()=>{throw Object.assign(new Error(),{code})}})).res.body.code,code))
 }
+
+test('stalled uploads time out and release all concurrency slots',async()=>{
+ const logs=[];let calls=0
+ const handler=createClassifyHandler({GROQ_API_KEY:'key'},async()=>{calls++;return {}},{error(...args){logs.push(args)}},Date.now,20)
+ const streams=[new Readable({read(){}}),new Readable({read(){}}),new Readable({read(){}})]
+ const pending=streams.map(chunks=>testRequest(handler,{chunks}))
+ assert.equal((await testRequest(handler)).res.body.code,'busy')
+ const results=await Promise.all(pending)
+ assert.ok(results.every(({req,res})=>req.destroyed && res.statusCode===408))
+ assert.equal((await testRequest(handler)).res.statusCode,200)
+ assert.equal(calls,1)
+ assert.ok(logs.every(args=>args[0]!=='AI classification fallback'))
+})
+test('local limiter rejections log only fixed codes',async()=>{
+ const logs=[]
+ const handler=createClassifyHandler({GROQ_API_KEY:'key'},async()=>({}),{error(...args){logs.push(args)}})
+ for(let i=0;i<21;i++)await testRequest(handler)
+ assert.deepEqual(logs,[['Local API request rejected',{code:'rate_limited'}]])
+})

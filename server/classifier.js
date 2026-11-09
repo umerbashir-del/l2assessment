@@ -1,3 +1,4 @@
+import { evidenceContext, normalizeEvidence } from '../src/utils/issueContext.js'
 import { validationReasons } from './diagnostics.js'
 export const categories = ['Billing Issue', 'Access Problem', 'Technical Problem', 'Feature Request', 'General Inquiry', 'Needs Review']
 export const schema = {
@@ -9,20 +10,8 @@ export const schema = {
   } } },
 }
 const priority = ['Access Problem', 'Billing Issue', 'Technical Problem', 'Feature Request', 'General Inquiry', 'Needs Review']
-const normalize = text => text.normalize('NFKC').replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ').trim().toLowerCase()
+const normalize = normalizeEvidence
 const fail = reason => { throw invalidResult(reason) }
-
-function activeEvidence(text, quote) {
-  const clauses = text.replace(/\b(?:but|and)\s+(?:that|it|this)\s+(?:is|was|has been)\s+/g, ' which is ').split(/[.!?;]|\b(?:and|but|however|while)\b/)
-  // Only accept an unambiguous occurrence; repeated active/denied quotes require review.
-  const matching = clauses.filter(clause => clause.includes(quote))
-  if (!matching.length) return false
-  return matching.every(clause => {
-    const context = clause.replace(/\b(?:not|never)\s+(?:yet\s+)?(?:resolved|fixed|restored)\b/g, '')
-    return !/\b(?:resolved|fixed|restored|working again|works now|no longer|maybe|might|possibly|perhaps)\b/.test(context) &&
-      !/\bno\s+(?:billing\s+issue|payment\s+(?:issue|problem)|access\s+problem|technical\s+(?:issue|problem))\b|\b(?:not|never)\s+(?:down|broken|failed|declined|locked out)\b|\b(?:did not|didn't|does not|doesn't)\s+fail\b/.test(context)
-  })
-}
 
 export function validateResult(value, message) {
   if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).join() !== 'issues' || !Array.isArray(value.issues) || !value.issues.length || value.issues.length > 6) fail('invalid_issues')
@@ -34,7 +23,10 @@ export function validateResult(value, message) {
     if (byCategory.has(issue.category)) fail('duplicate_category')
     const quote = normalize(issue.evidence)
     if (quote.length < 3 || quote.length > 300 || !text.includes(quote)) fail('ungrounded_evidence')
-    if (['Billing Issue', 'Access Problem', 'Technical Problem'].includes(issue.category) && !activeEvidence(text, quote)) fail('inactive_or_uncertain_evidence')
+    if (['Billing Issue', 'Access Problem', 'Technical Problem'].includes(issue.category)) {
+      const context = evidenceContext(text, quote)
+      if (!context.active || context.uncertain) fail('inactive_or_uncertain_evidence')
+    }
     byCategory.set(issue.category, { category: issue.category, evidence: issue.evidence.trim() })
   }
   const ordered = priority.filter(category => byCategory.has(category))
@@ -114,3 +106,4 @@ function transportError(error, signal) {
 function invalidResult(validationReason, finishReason) {
   return Object.assign(new Error('Invalid AI response'), { code: 'invalid_result', validationReason: validationReasons.includes(validationReason) ? validationReason : 'invalid_schema', finishReason })
 }
+

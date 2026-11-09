@@ -11,7 +11,7 @@ export function logFailure(error, code, logger = console) {
   })
 }
 
-export function createClassifyHandler(env, classify = requestClassification, logger = console, now = Date.now) {
+export function createClassifyHandler(env, classify = requestClassification, logger = console, now = Date.now, uploadTimeoutMs = 10000) {
   const hits = new Map()
   let active = 0
   return async (req, res) => {
@@ -39,10 +39,11 @@ export function createClassifyHandler(env, classify = requestClassification, log
     const ip = req.socket?.remoteAddress || 'local'
     let entry = hits.get(ip)
     if (!entry) {
-      if (hits.size >= 256) return close(429, { code: 'rate_limited' })
+      if (hits.size >= 256) { logger.error('Local API request rejected', { code: 'rate_limited' }); return close(429, { code: 'rate_limited' }) }
       entry = { start: time, count: 0 }; hits.set(ip, entry)
     }
     if (++entry.count > 20 || active >= 3) {
+      logger.error('Local API request rejected', { code: entry.count > 20 ? 'rate_limited' : 'busy' })
       res.setHeader('Retry-After', '60')
       return close(429, { code: entry.count > 20 ? 'rate_limited' : 'busy' })
     }
@@ -51,6 +52,8 @@ export function createClassifyHandler(env, classify = requestClassification, log
     try {
       let bytes = 0
       const chunks = []
+      let uploadTimedOut = false
+      const timer = setTimeout(() => { uploadTimedOut = true; req.destroy(new Error('Upload deadline exceeded')) }, uploadTimeoutMs)
       try {
         for await (const chunk of req) {
           const data = typeof chunk === 'string' ? new TextEncoder().encode(chunk) : chunk
@@ -59,9 +62,9 @@ export function createClassifyHandler(env, classify = requestClassification, log
           chunks.push(data)
         }
       } catch {
-        if (!res.destroyed && !res.writableEnded) close(400, { error: 'Request body could not be read' })
+        if (!res.destroyed && !res.writableEnded) close(uploadTimedOut ? 408 : 400, { error: uploadTimedOut ? 'Upload timed out' : 'Request body could not be read' })
         return
-      }
+      } finally { clearTimeout(timer) }
       const combined = new Uint8Array(bytes)
       let offset = 0
       for (const chunk of chunks) { combined.set(chunk, offset); offset += chunk.byteLength }
@@ -85,3 +88,5 @@ export function localApi(env) {
     server.middlewares.use('/api/classify', createClassifyHandler(env))
   } }
 }
+
+

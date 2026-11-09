@@ -53,3 +53,14 @@ for (const [message, expected] of wordingCases) {
   assert.equal(result.source, 'local')
  })
 }
+
+for(const [message,expected] of [
+ ["My payment failed but it's working again.", ['Needs Review']],
+ ["I can't log in. It's fixed now.", ['Needs Review']],
+ ["I can't log in", ['Access Problem']],
+ ['The app no longer loads.', ['Technical Problem']],
+ ['Payment works now, but I am still locked out.', ['Access Problem']],
+ ['My payment failed. Portal access is restored.', ['Billing Issue']],
+]) {
+ test(`fallback sentence context: ${message}`,()=>assert.deepEqual(categorizeLocally(message).categories,expected))
+}
