@@ -123,8 +123,9 @@ test('stalled uploads time out and release all concurrency slots',async()=>{
  assert.equal((await testRequest(handler)).res.body.code,'busy')
  const results=await Promise.all(pending)
  assert.ok(results.every(({req,res})=>req.destroyed && res.statusCode===408))
- assert.equal((await testRequest(handler)).res.statusCode,200)
- assert.equal(calls,1)
+ const next = await Promise.all([testRequest(handler),testRequest(handler),testRequest(handler)])
+ assert.ok(next.every(({res})=>res.statusCode===200))
+ assert.equal(calls,3)
  assert.ok(logs.every(args=>args[0]!=='AI classification fallback'))
 })
 test('local limiter rejections log only fixed codes',async()=>{
@@ -133,3 +134,17 @@ test('local limiter rejections log only fixed codes',async()=>{
  for(let i=0;i<21;i++)await testRequest(handler)
  assert.deepEqual(logs,[['Local API request rejected',{code:'rate_limited'}]])
 })
+
+
+test('normal body completion clears deadline before slow provider response',async()=>{
+ const stream=Readable.from(['{"message":"hello"}'],{autoDestroy:false})
+ const handler=createClassifyHandler({GROQ_API_KEY:'key'},async()=>{
+  await new Promise(resolve=>setTimeout(resolve,40))
+  assert.equal(stream.destroyed,false)
+  return {}
+ },console,Date.now,10)
+ const {res}=await testRequest(handler,{chunks:stream})
+ assert.equal(res.statusCode,200)
+ stream.destroy()
+})
+

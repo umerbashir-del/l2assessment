@@ -122,3 +122,9 @@ test('all validateResult rejection reasons reach the shared logging allowlist',(
   assert.equal(logs[0][1].validationReason,reason)
  }
 })
+
+test('no longer able to log in is active',()=>assert.equal(validateResult(aiIssue('Access Problem','no longer able to log in'),'I am no longer able to log in.').category,'Access Problem'))
+test('no longer get the error is resolved',()=>assert.throws(()=>validateResult(aiIssue('Technical Problem','the error'),'I no longer get the error.'),{validationReason:'inactive_or_uncertain_evidence'}))
+test('charge no longer appears is not accepted as a confident billing issue',()=>assert.throws(()=>validateResult(aiIssue('Billing Issue','charge'),'The charge no longer appears.'),{validationReason:'inactive_or_uncertain_evidence'}))
+test('curly contraction resolution is scoped to the prior issue',()=>assert.throws(()=>validateResult(aiIssue('Billing Issue','payment failed'),'My payment failed but it’s working again.'),{validationReason:'inactive_or_uncertain_evidence'}))
+test('unrelated next sentence does not resolve login failure',()=>assert.equal(validateResult(aiIssue('Access Problem',"couldn't log in"),"I couldn't log in. Also, my invoice is wrong.").category,'Access Problem'))

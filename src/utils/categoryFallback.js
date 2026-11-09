@@ -15,8 +15,8 @@ export function categorizeLocally(message) {
   const uncertain = clause => /\b(?:maybe|might|possibly|perhaps|not sure|i think|is there|could there)\b/.test(clause)
   let requiresReview = false
   const rules = [
-    ['Billing Issue', /\b(?:payment|card|billing|charge|charged|refund)\b.{0,45}\b(?:failed|failing|declined|twice|duplicate|error|stuck|not working|won't go through|will not go through|doesn't work|does not work)\b|\b(?:charged (?:me )?twice|double charged|payment didn't go through)\b/],
-    ['Access Problem', /\b(?:cannot|can't|couldn't|unable to)\s+(?:access|open|reach|log\s?in(?:to)?)\b|\b(?:locked out|no access)\b|\b(?:login|sign-in) page\b.{0,30}\b(?:sending me back|bouncing me back)\b|\b(?:won't|will not|doesn't|does not) let me (?:in|into|access)\b/],
+    ['Billing Issue', /\b(?:payment|card|billing|charge|charged|refund|invoice)\b.{0,45}\b(?:failed|failing|declined|twice|duplicate|error|stuck|wrong|not working|won't go through|will not go through|doesn't work|does not work)\b|\b(?:charged (?:me )?twice|double charged|payment didn't go through)\b/],
+    ['Access Problem', /\b(?:cannot|can't|couldn't|unable to)\s+(?:access|open|reach|log\s?in(?:to)?)\b|\b(?:locked out|no access|no longer able to log in)\b|\b(?:login|sign-in) page\b.{0,30}\b(?:sending me back|bouncing me back)\b|\b(?:won't|will not|doesn't|does not) let me (?:in|into|access)\b/],
     ['Technical Problem', /\b(?:server|database|website|dashboard|page|app)\b.{0,35}\b(?:down|unavailable|broken|crashing|not working|loading forever|won't load|doesn't load|no longer loads|no longer works)\b|\b(?:error message|connection lost)\b/],
     ['Feature Request', /\b(?:please add|could you add|would like to see|feature request|i wish|add dark mode)\b/],
   ]
@@ -32,6 +32,7 @@ export function categorizeLocally(message) {
   if (!issues.length) issues.push({ category: categories[0], evidence: message })
   return { issues, categories, category: categories[0], source: 'local', reasoning: evidence.length ? evidence.join('\n\n') : 'No active issue matched. ' + (categories[0] === 'Needs Review' ? 'Human review is needed.' : 'This appears to be an information request or acknowledgment.') }
 }
+
 
 
 

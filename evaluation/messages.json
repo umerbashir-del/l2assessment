@@ -1,0 +1,22 @@
+[
+ {"id":"payment-failure","message":"My payment failed.","expected":[["Billing Issue"]]},
+ {"id":"declined-card","message":"My card keeps getting declined.","expected":[["Billing Issue"]]},
+ {"id":"duplicate-charge","message":"You charged me twice.","expected":[["Billing Issue"]]},
+ {"id":"blocked-login","message":"I can't log in.","expected":[["Access Problem"]]},
+ {"id":"no-longer-login","message":"I am no longer able to log in.","expected":[["Access Problem"]]},
+ {"id":"no-longer-loads","message":"The app no longer loads.","expected":[["Technical Problem"]]},
+ {"id":"outage","message":"The server is down.","expected":[["Technical Problem"]]},
+ {"id":"mixed-failures","message":"My payment failed and I cannot access the portal.","expected":[["Billing Issue","Access Problem"]]},
+ {"id":"denied-billing-active-access","message":"I have no billing issue, but I cannot access the portal.","expected":[["Access Problem"]]},
+ {"id":"resolved-billing-active-access","message":"The payment problem is resolved and I cannot access the portal.","expected":[["Access Problem"]]},
+ {"id":"resolved-contraction","message":"My payment failed but it’s working again.","expected":[["General Inquiry"],["Needs Review"]]},
+ {"id":"resolved-next-sentence","message":"I couldn't log in. It's fixed now.","expected":[["General Inquiry"],["Needs Review"]]},
+ {"id":"independent-next-sentence","message":"I couldn't log in. Also, my invoice is wrong.","expected":[["Access Problem","Billing Issue"]]},
+ {"id":"denied-outage","message":"The server is not down.","expected":[["General Inquiry"],["Needs Review"]]},
+ {"id":"denied-billing","message":"I have no billing issue.","expected":[["General Inquiry"],["Needs Review"]]},
+ {"id":"resolved-error","message":"I no longer get the error.","expected":[["General Inquiry"],["Needs Review"]]},
+ {"id":"ambiguous-charge","message":"The charge no longer appears.","expected":[["Needs Review"]]},
+ {"id":"uncertain-outage","message":"Maybe the server is down.","expected":[["Needs Review"]]},
+ {"id":"routine-payment-question","message":"How do I update my payment method?","expected":[["General Inquiry"]]},
+ {"id":"feature-request","message":"Please add dark mode.","expected":[["Feature Request"]]}
+]

@@ -1,0 +1,488 @@
+[
+  {
+    "id": "payment-failure",
+    "message": "My payment failed.",
+    "expected": [
+      [
+        "Billing Issue"
+      ]
+    ],
+    "local": {
+      "categories": [
+        "Billing Issue"
+      ],
+      "pass": true
+    },
+    "ai": {
+      "categories": [
+        "Billing Issue"
+      ],
+      "pass": true,
+      "source": "ai"
+    }
+  },
+  {
+    "id": "declined-card",
+    "message": "My card keeps getting declined.",
+    "expected": [
+      [
+        "Billing Issue"
+      ]
+    ],
+    "local": {
+      "categories": [
+        "Billing Issue"
+      ],
+      "pass": true
+    },
+    "ai": {
+      "categories": [
+        "Billing Issue"
+      ],
+      "pass": true,
+      "source": "ai"
+    }
+  },
+  {
+    "id": "duplicate-charge",
+    "message": "You charged me twice.",
+    "expected": [
+      [
+        "Billing Issue"
+      ]
+    ],
+    "local": {
+      "categories": [
+        "Billing Issue"
+      ],
+      "pass": true
+    },
+    "ai": {
+      "categories": [
+        "Billing Issue"
+      ],
+      "pass": true,
+      "source": "ai"
+    }
+  },
+  {
+    "id": "blocked-login",
+    "message": "I can't log in.",
+    "expected": [
+      [
+        "Access Problem"
+      ]
+    ],
+    "local": {
+      "categories": [
+        "Access Problem"
+      ],
+      "pass": true
+    },
+    "ai": {
+      "categories": [
+        "Access Problem"
+      ],
+      "pass": true,
+      "source": "ai"
+    }
+  },
+  {
+    "id": "no-longer-login",
+    "message": "I am no longer able to log in.",
+    "expected": [
+      [
+        "Access Problem"
+      ]
+    ],
+    "local": {
+      "categories": [
+        "Access Problem"
+      ],
+      "pass": true
+    },
+    "ai": {
+      "categories": [
+        "Access Problem"
+      ],
+      "pass": true,
+      "source": "ai"
+    }
+  },
+  {
+    "id": "no-longer-loads",
+    "message": "The app no longer loads.",
+    "expected": [
+      [
+        "Technical Problem"
+      ]
+    ],
+    "local": {
+      "categories": [
+        "Technical Problem"
+      ],
+      "pass": true
+    },
+    "ai": {
+      "categories": [
+        "Technical Problem"
+      ],
+      "pass": true,
+      "source": "ai"
+    }
+  },
+  {
+    "id": "outage",
+    "message": "The server is down.",
+    "expected": [
+      [
+        "Technical Problem"
+      ]
+    ],
+    "local": {
+      "categories": [
+        "Technical Problem"
+      ],
+      "pass": true
+    },
+    "ai": {
+      "categories": [
+        "Technical Problem"
+      ],
+      "pass": true,
+      "source": "ai"
+    }
+  },
+  {
+    "id": "mixed-failures",
+    "message": "My payment failed and I cannot access the portal.",
+    "expected": [
+      [
+        "Billing Issue",
+        "Access Problem"
+      ]
+    ],
+    "local": {
+      "categories": [
+        "Billing Issue",
+        "Access Problem"
+      ],
+      "pass": true
+    },
+    "ai": {
+      "categories": [
+        "Access Problem",
+        "Billing Issue"
+      ],
+      "pass": true,
+      "source": "ai"
+    }
+  },
+  {
+    "id": "denied-billing-active-access",
+    "message": "I have no billing issue, but I cannot access the portal.",
+    "expected": [
+      [
+        "Access Problem"
+      ]
+    ],
+    "local": {
+      "categories": [
+        "Access Problem"
+      ],
+      "pass": true
+    },
+    "ai": {
+      "categories": [
+        "Access Problem"
+      ],
+      "pass": true,
+      "source": "ai"
+    }
+  },
+  {
+    "id": "resolved-billing-active-access",
+    "message": "The payment problem is resolved and I cannot access the portal.",
+    "expected": [
+      [
+        "Access Problem"
+      ]
+    ],
+    "local": {
+      "categories": [
+        "Access Problem"
+      ],
+      "pass": true
+    },
+    "ai": {
+      "categories": [
+        "Access Problem"
+      ],
+      "pass": true,
+      "source": "ai"
+    }
+  },
+  {
+    "id": "resolved-contraction",
+    "message": "My payment failed but it’s working again.",
+    "expected": [
+      [
+        "General Inquiry"
+      ],
+      [
+        "Needs Review"
+      ]
+    ],
+    "local": {
+      "categories": [
+        "Needs Review"
+      ],
+      "pass": true
+    },
+    "ai": {
+      "code": "invalid_result",
+      "validationReason": "invalid_issues",
+      "source": "rejected_or_unavailable"
+    },
+    "fallback": {
+      "categories": [
+        "Needs Review"
+      ],
+      "pass": true,
+      "source": "local"
+    }
+  },
+  {
+    "id": "resolved-next-sentence",
+    "message": "I couldn't log in. It's fixed now.",
+    "expected": [
+      [
+        "General Inquiry"
+      ],
+      [
+        "Needs Review"
+      ]
+    ],
+    "local": {
+      "categories": [
+        "Needs Review"
+      ],
+      "pass": true
+    },
+    "ai": {
+      "code": "invalid_result",
+      "validationReason": "invalid_issues",
+      "source": "rejected_or_unavailable"
+    },
+    "fallback": {
+      "categories": [
+        "Needs Review"
+      ],
+      "pass": true,
+      "source": "local"
+    }
+  },
+  {
+    "id": "independent-next-sentence",
+    "message": "I couldn't log in. Also, my invoice is wrong.",
+    "expected": [
+      [
+        "Access Problem",
+        "Billing Issue"
+      ]
+    ],
+    "local": {
+      "categories": [
+        "Billing Issue",
+        "Access Problem"
+      ],
+      "pass": true
+    },
+    "ai": {
+      "categories": [
+        "Access Problem",
+        "Billing Issue"
+      ],
+      "pass": true,
+      "source": "ai"
+    }
+  },
+  {
+    "id": "denied-outage",
+    "message": "The server is not down.",
+    "expected": [
+      [
+        "General Inquiry"
+      ],
+      [
+        "Needs Review"
+      ]
+    ],
+    "local": {
+      "categories": [
+        "Needs Review"
+      ],
+      "pass": true
+    },
+    "ai": {
+      "categories": [
+        "Needs Review"
+      ],
+      "pass": true,
+      "source": "ai"
+    }
+  },
+  {
+    "id": "denied-billing",
+    "message": "I have no billing issue.",
+    "expected": [
+      [
+        "General Inquiry"
+      ],
+      [
+        "Needs Review"
+      ]
+    ],
+    "local": {
+      "categories": [
+        "Needs Review"
+      ],
+      "pass": true
+    },
+    "ai": {
+      "code": "invalid_result",
+      "validationReason": "invalid_issues",
+      "source": "rejected_or_unavailable"
+    },
+    "fallback": {
+      "categories": [
+        "Needs Review"
+      ],
+      "pass": true,
+      "source": "local"
+    }
+  },
+  {
+    "id": "resolved-error",
+    "message": "I no longer get the error.",
+    "expected": [
+      [
+        "General Inquiry"
+      ],
+      [
+        "Needs Review"
+      ]
+    ],
+    "local": {
+      "categories": [
+        "Needs Review"
+      ],
+      "pass": true
+    },
+    "ai": {
+      "code": "invalid_result",
+      "validationReason": "invalid_issues",
+      "source": "rejected_or_unavailable"
+    },
+    "fallback": {
+      "categories": [
+        "Needs Review"
+      ],
+      "pass": true,
+      "source": "local"
+    }
+  },
+  {
+    "id": "ambiguous-charge",
+    "message": "The charge no longer appears.",
+    "expected": [
+      [
+        "Needs Review"
+      ]
+    ],
+    "local": {
+      "categories": [
+        "Needs Review"
+      ],
+      "pass": true
+    },
+    "ai": {
+      "code": "invalid_result",
+      "validationReason": "inactive_or_uncertain_evidence",
+      "source": "rejected_or_unavailable"
+    },
+    "fallback": {
+      "categories": [
+        "Needs Review"
+      ],
+      "pass": true,
+      "source": "local"
+    }
+  },
+  {
+    "id": "uncertain-outage",
+    "message": "Maybe the server is down.",
+    "expected": [
+      [
+        "Needs Review"
+      ]
+    ],
+    "local": {
+      "categories": [
+        "Needs Review"
+      ],
+      "pass": true
+    },
+    "ai": {
+      "categories": [
+        "Needs Review"
+      ],
+      "pass": true,
+      "source": "ai"
+    }
+  },
+  {
+    "id": "routine-payment-question",
+    "message": "How do I update my payment method?",
+    "expected": [
+      [
+        "General Inquiry"
+      ]
+    ],
+    "local": {
+      "categories": [
+        "General Inquiry"
+      ],
+      "pass": true
+    },
+    "ai": {
+      "categories": [
+        "General Inquiry"
+      ],
+      "pass": true,
+      "source": "ai"
+    }
+  },
+  {
+    "id": "feature-request",
+    "message": "Please add dark mode.",
+    "expected": [
+      [
+        "Feature Request"
+      ]
+    ],
+    "local": {
+      "categories": [
+        "Feature Request"
+      ],
+      "pass": true
+    },
+    "ai": {
+      "categories": [
+        "Feature Request"
+      ],
+      "pass": true,
+      "source": "ai"
+    }
+  }
+]
