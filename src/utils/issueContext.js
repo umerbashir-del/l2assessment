@@ -4,6 +4,7 @@ const followsPriorIssue = text => /^\s*(?:it(?:'s| is| was| has been)?|its|that(
 function deniedOrResolved(text) {
   const context = text
     .replace(/\b(?:not|never)\s+(?:yet\s+)?(?:resolved|fixed|restored)\b/g, '')
+    .replace(/\bno longer able to\s+(?:access|log\s?in)\b/g, '')
     .replace(/\bno longer\s+(?:works?|working|loads?|loading|opens?|opening|available|accessible)\b/g, '')
   return /\b(?:resolved|fixed|restored|working again|works now|now works|working now|is fine now|no longer)\b/.test(context) ||
     /\bno\s+(?:billing\s+issue|payment\s+(?:issue|problem|failure)|access\s+problem|technical\s+(?:issue|problem)|trouble\s+logging\s+in|problem\s+with\s+billing)\b|\b(?:not|never)\s+(?:(?:being|getting)\s+)?(?:down|broken|failed|failing|declined|charged|locked out)\b|\b(?:did not|didn't|does not|doesn't)\s+fail\b/.test(context)
@@ -34,4 +35,5 @@ export function evidenceContext(message, evidence) {
     uncertain: contexts.some(context => /\b(?:maybe|might|possibly|perhaps|not sure|i think|is there|could there)\b/.test(context)),
   }
 }
+
 
