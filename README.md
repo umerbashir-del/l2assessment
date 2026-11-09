@@ -144,3 +144,13 @@ Run `node --test server/classifier.test.js src/utils/*.test.js` for offline test
 
 This project is for educational purposes only.
 
+
+### Local backend limits and evidence validation
+
+The development API accepts loopback hostnames only and checks browser origins. It allows 20 requests per minute per client address and at most three requests in flight, with bounded in-memory tracking. These limits reset on server restart. Uploads are limited to 24,000 bytes and messages to 10,000 characters; oversized uploads are closed and upload failures are kept separate from provider failures. Groq responses are capped at 65,536 bytes.
+
+Evidence matching normalizes Unicode quotes and whitespace, requires 3–300 characters, and checks the surrounding clause for supported denied, resolved, and uncertain wording. This is a conservative heuristic, not a guarantee of semantic correctness: rejected AI output uses local fallback. Duplicate categories remain rejected with a distinct diagnostic. Primary categories use a fixed order (Access, Billing, Technical, Feature, General Inquiry, Needs Review).
+
+Provider request errors (400/422), oversized payloads (413), authentication, rate limits, timeouts, and network errors have distinct fallback codes. Fixed diagnostic lists are shared between classification and safe server logging. Run `node --test server/*.test.js src/utils/*.test.js` to include the API regression tests.
+
+The limiter keys on `req.socket.remoteAddress`, never `X-Forwarded-For`. Expired entries are pruned on subsequent requests, and the map is capped at 256 client entries. This is a local development tool: behind a proxy, users would share the proxy's bucket; production requires explicit trusted-proxy and authentication design. The API is not installed under `vite preview` or a static production build. Run `node server/adversarial-live-test.js` for two opt-in Groq checks covering denied-plus-active issues and a prompt-injection attempt. These checks consume API requests and are not part of the offline test suite.
