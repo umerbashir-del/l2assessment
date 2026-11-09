@@ -17,9 +17,12 @@ export function validateResult(value, message) {
   if (seen.size > 1 && (seen.has('Needs Review') || seen.has('General Inquiry'))) throw new Error('Conflicting categories')
   return { issues: value.issues.map(issue => ({ ...issue })), categories: [...seen], category: [...seen][0], source: 'ai', reasoning: value.issues.map(i => `${i.category}: “${i.evidence}”`).join('\n\n') }
 }
-export async function requestClassification(message, apiKey, model = 'openai/gpt-oss-20b') {
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST', signal: AbortSignal.timeout(20000),
+export async function requestClassification(message, apiKey, model = 'openai/gpt-oss-20b', fetcher = globalThis.fetch) {
+  const signal = AbortSignal.timeout(20000)
+  let response
+  try {
+  response = await fetcher('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST', signal,
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ model, temperature: 0, max_completion_tokens: 2048,
       messages: [
@@ -28,17 +31,45 @@ export async function requestClassification(message, apiKey, model = 'openai/gpt
       ], response_format: { type: 'json_schema', json_schema: { name: 'triage', strict: true, schema } },
     }),
   })
+  } catch (error) { throw transportError(error, signal) }
   if (!response.ok) {
     const code = [401,403].includes(response.status) ? 'authentication' : response.status === 404 ? 'model_unavailable' : response.status === 429 ? 'rate_limit' : 'provider_unavailable'
-    throw Object.assign(new Error('Groq request failed'), { code })
+    throw Object.assign(new Error('Groq request failed'), { code, status: response.status, requestId: response.headers.get('x-request-id') })
   }
+  let text
+  try { text = await response.text() }
+  catch (error) { throw transportError(error, signal) }
+
+  let body
+  try { body = JSON.parse(text) }
+  catch { throw invalidResult('malformed_response_json') }
+  const choice = body?.choices?.[0]
+  if (choice?.finish_reason === 'length') throw invalidResult('truncated_response', 'length')
+  if (choice?.finish_reason !== 'stop' || choice.message?.refusal) throw invalidResult('incomplete_or_refused_response')
+
+  let value
   try {
-  const body = await response.json()
-  const choice = body.choices?.[0]
-  if (choice?.finish_reason !== 'stop' || choice.message?.refusal) throw new Error('Incomplete or refused result')
-  return { ...validateResult(JSON.parse(choice.message.content), message), model }
-  } catch { throw Object.assign(new Error('Invalid AI response'), { code: 'invalid_result' }) }
+    if (typeof choice.message.content !== 'string') throw new Error()
+    value = JSON.parse(choice.message.content)
+  } catch { throw invalidResult('malformed_model_json') }
+
+  try { return { ...validateResult(value, message), model } }
+  catch (error) {
+    const reasons = new Map([
+      ['Invalid issues', 'invalid_issues'],
+      ['Invalid category or ungrounded evidence', 'invalid_category_or_evidence'],
+      ['Conflicting categories', 'conflicting_categories'],
+    ])
+    throw invalidResult(reasons.get(error.message) || 'invalid_schema')
+  }
 }
 
+function transportError(error, signal) {
+  const timeout = signal.aborted || error?.name === 'TimeoutError' || error?.name === 'AbortError'
+  return Object.assign(new Error('Groq transport failed'), { code: timeout ? 'timeout' : 'network' })
+}
 
+function invalidResult(validationReason, finishReason) {
+  return Object.assign(new Error('Invalid AI response'), { code: 'invalid_result', validationReason, finishReason })
+}
 
