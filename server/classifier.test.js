@@ -79,3 +79,46 @@ test('large streamed response is cancelled before buffering everything',async()=
 test('content filter finish reason is preserved',async()=>{
  await assert.rejects(()=>requestClassification('hello','key','model',reply({choices:[{finish_reason:'content_filter',message:{content:''}}]})),{validationReason:'incomplete_or_refused_response',finishReason:'content_filter'})
 })
+
+const contextCases = [
+ ['payment failed and I cannot access the portal', 'Billing Issue', 'payment failed and I cannot access the portal', true],
+ ['payment failed but I cannot access the portal', 'Access Problem', 'payment failed but I cannot access the portal', true],
+ ["My payment failed but it's working again.", 'Billing Issue', 'payment failed', false],
+ ["I can't log in. It's fixed now.", 'Access Problem', "can't log in", false],
+ ["I can't log in", 'Access Problem', "can't log in", true],
+ ['The app no longer loads.', 'Technical Problem', 'app no longer loads', true],
+ ['I have no trouble logging in.', 'Access Problem', 'logging in', false],
+ ['There is no problem with billing.', 'Billing Issue', 'billing', false],
+ ['My payment failed. Portal access is restored.', 'Billing Issue', 'payment failed', true],
+ ['My payment failed and I cannot access the portal. It is fixed now.', 'Billing Issue', 'payment failed', true],
+ ['My payment failed and I cannot access the portal. It is fixed now.', 'Access Problem', 'cannot access', false],
+]
+for(const [message,category,evidence,active] of contextCases) {
+ test(`sentence context: ${message} / ${category}`,()=>{
+  if(active) assert.equal(validateResult(aiIssue(category,evidence),message).category,category)
+  else assert.throws(()=>validateResult(aiIssue(category,evidence),message),{validationReason:'inactive_or_uncertain_evidence'})
+ })
+}
+
+import { validationReasons } from './diagnostics.js'
+import { logFailure } from './api.js'
+test('all validateResult rejection reasons reach the shared logging allowlist',()=>{
+ const cases=[
+  [null,'hello','invalid_issues'],
+  [{issues:[{category:'General Inquiry'}]},'hello','invalid_schema'],
+  [aiIssue('fake','hello'),'hello','invalid_category'],
+  [{issues:[{category:'General Inquiry',evidence:'hello'},{category:'General Inquiry',evidence:'hello'}]},'hello','duplicate_category'],
+  [aiIssue('General Inquiry','absent'),'hello','ungrounded_evidence'],
+  [aiIssue('Billing Issue','billing issue'),'I have no billing issue','inactive_or_uncertain_evidence'],
+  [{issues:[{category:'General Inquiry',evidence:'hello'},{category:'Feature Request',evidence:'add dark mode'}]},'hello please add dark mode','conflicting_categories'],
+ ]
+ for(const [value,message,reason] of cases) {
+  let failure
+  try {validateResult(value,message)} catch(error){failure=error}
+  assert.equal(failure?.validationReason,reason)
+  assert.ok(validationReasons.includes(reason))
+  const logs=[]
+  logFailure(failure,'invalid_result',{error(...args){logs.push(args)}})
+  assert.equal(logs[0][1].validationReason,reason)
+ }
+})
