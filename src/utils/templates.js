@@ -1,43 +1,23 @@
-/**
- * Recommendation Templates - Maps categories to recommended actions
- */
-
+/** Recommendations use classified issues; they never reinterpret the message. */
 const actionTemplates = {
-  "Billing Issue": "Ask user to check billing portal.",
-  "Technical Problem": "Suggest user to restart their browser.",
-  "General Inquiry": "Respond with FAQ link.",
-  "Feature Request": "Ask user to check billing portal.",
-  "Unknown": "Review manually."
+  'Access Problem': 'Have support investigate and restore account or portal access. Contact the customer through an accessible channel.',
+  'Billing Issue': 'Have billing support investigate the reported payment or billing problem and offer an alternative way to resolve it if the usual route is unavailable.',
+  'Technical Problem': 'Investigate the reported failure and gather diagnostic details.',
+  'General Inquiry': 'Answer the specific question or share a relevant help article.',
+  'Feature Request': 'Acknowledge the suggestion and record it for the product team.',
+  'Needs Review': 'Send this message for human review.',
 }
-
-/**
- * Get recommended action for a given category
- * 
- * @param {string} category - The message category
- * @param {string} urgency - The urgency level
- * @returns {string} - Recommended next step
- */
-export function getRecommendedAction(category, urgency) {
-  return actionTemplates[category] || "No recommendation available."
+function issueCategories(issues) {
+  return [...new Set((Array.isArray(issues) ? issues : [issues]).map(issue => typeof issue === 'string' ? issue : issue?.category))]
 }
-
-/**
- * Get all available categories
- * 
- * @returns {string[]} - List of categories
- */
-export function getAvailableCategories() {
-  return Object.keys(actionTemplates)
+export function getRecommendedAction(issues, urgency) {
+  const actions = []
+  if (urgency === 'High') actions.push('Escalate immediately to support to address the reported high impact.')
+  if (urgency === 'Needs Review') actions.push('Have support confirm the missing impact details before assigning priority.')
+  for (const category of issueCategories(issues)) actions.push(actionTemplates[category] || actionTemplates['Needs Review'])
+  return [...new Set(actions)].join(' ')
 }
-
-/**
- * Determines if message should be escalated
- * 
- * @param {string} category - The message category
- * @param {string} urgency - The urgency level
- * @param {string} message - The original message
- * @returns {boolean} - Whether to escalate
- */
-export function shouldEscalate(category, urgency, message) {
-  return message.length > 100
+export function getAvailableCategories() { return Object.keys(actionTemplates) }
+export function shouldEscalate(issues, urgency) {
+  return urgency === 'High' || urgency === 'Needs Review' || issueCategories(issues).includes('Access Problem')
 }
