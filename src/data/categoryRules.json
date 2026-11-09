@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "name": "Billing Issue",
+      "phrases": [
+        "payment failed",
+        "payment didn't go through",
+        "card was declined",
+        "card declined",
+        "charged twice",
+        "double charged",
+        "unauthorized charge",
+        "incorrect invoice",
+        "wrong bill",
+        "refund not received",
+        "need a refund",
+        "request a refund"
+      ]
+    },
+    {
+      "name": "Technical Problem",
+      "phrases": [
+        "outage",
+        "server down",
+        "server is down",
+        "site is down",
+        "app is down",
+        "service is unavailable",
+        "database connection lost",
+        "database connection failed",
+        "app crashes",
+        "app keeps crashing",
+        "app is broken",
+        "not working",
+        "won't load",
+        "can't load",
+        "can't access",
+        "cannot access",
+        "unable to access"
+      ],
+      "failurePhrases": ["no access"]
+    },
+    {
+      "name": "Feature Request",
+      "phrases": [
+        "feature request",
+        "could you add",
+        "can you add",
+        "please add",
+        "please improve",
+        "i wish you would add",
+        "i would like to see",
+        "would be great if"
+      ]
+    }
+  ],
+  "subjectStateGroups": [
+    {
+      "category": "Technical Problem",
+      "subjects": ["Atlas workspace"],
+      "states": ["won't load", "doesn't load", "is unavailable"]
+    }
+  ],
+  "context": {
+    "negationWords": ["no", "not", "without", "never"],
+    "resolutionWords": ["resolved", "fixed", "restored"],
+    "resolutionPhrases": ["no longer"],
+    "unresolvedPhrases": ["not resolved", "not fixed", "hasn't been resolved"],
+    "uncertaintyWords": ["maybe", "might", "possibly", "perhaps"],
+    "questionStarts": ["how", "what", "when", "where", "why", "do you", "can i", "is there"],
+    "uncertainQuestionStarts": ["is", "are", "could", "might", "has", "have"],
+    "inactivePhrases": ["server is no longer down", "no outage", "outage has been resolved"]
+  }
+}
