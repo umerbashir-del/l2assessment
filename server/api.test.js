@@ -30,8 +30,8 @@ test('provider errors log diagnosis but never secrets or customer text',async()=
  assert.doesNotMatch(JSON.stringify({res,logs}),/test-secret|private customer message/)
 })
 test('invalid output logs safe validation diagnosis',async()=>{
- const {logs}=await request('{"message":"hello"}',{classify:async()=>{throw Object.assign(new Error(),{code:'invalid_result',validationReason:'Conflicting categories'})}})
- assert.equal(logs[0][1].validationReason,'Conflicting categories')
+ const {logs}=await request('{"message":"hello"}',{classify:async()=>{throw Object.assign(new Error(),{code:'invalid_result',validationReason:'conflicting_categories'})}})
+ assert.equal(logs[0][1].validationReason,'conflicting_categories')
 })
 
 import { requestClassification } from './classifier.js'
@@ -65,3 +65,52 @@ test('route preserves network failure classification',async()=>{
  assert.equal(res.body.code,'network');assert.equal(logs[0][1].code,'network')
 })
 
+
+
+function testRequest(handler, {host='127.0.0.1:5175',origin,raw='{"message":"hello"}',chunks,headers={}}={}) {
+ const req=chunks || Readable.from([new TextEncoder().encode(raw)])
+ req.method='POST';req.headers={host,...headers,...(origin?{origin}:{})}
+ const res={headers:{},setHeader(k,v){this.headers[k]=v},end(value){this.body=JSON.parse(value)}}
+ return handler(req,res).then(()=>({req,res}))
+}
+test('matching malicious host and origin is rejected',async()=>{
+ const handler=createClassifyHandler({GROQ_API_KEY:'key'})
+ assert.equal((await testRequest(handler,{host:'evil.example:5175',origin:'http://evil.example:5175'})).res.statusCode,403)
+})
+test('21st request is limited and window expires',async()=>{
+ let time=0,calls=0
+ const handler=createClassifyHandler({GROQ_API_KEY:'key'},async()=>{calls++;return {}},console,()=>time)
+ for(let i=0;i<20;i++)assert.equal((await testRequest(handler)).res.statusCode,200)
+ assert.equal((await testRequest(handler)).res.statusCode,429)
+ assert.equal(calls,20);time=60000
+ assert.equal((await testRequest(handler)).res.statusCode,200)
+})
+test('concurrency cap rejects fourth request and releases slots',async()=>{
+ const finish=[]
+ const handler=createClassifyHandler({GROQ_API_KEY:'key'},()=>new Promise(resolve=>finish.push(resolve)))
+ const running=[testRequest(handler),testRequest(handler),testRequest(handler)]
+ // The slots are acquired before asynchronous body reading.
+ assert.equal((await testRequest(handler)).res.body.code,'busy')
+ while(finish.length<3)await new Promise(resolve=>setTimeout(resolve,0))
+ finish.forEach(resolve=>resolve({}));await Promise.all(running)
+})
+test('oversized chunked upload is closed',async()=>{
+ const handler=createClassifyHandler({GROQ_API_KEY:'key'})
+ const stream=Readable.from([new Uint8Array(16000),new Uint8Array(16000)])
+ const {req,res}=await testRequest(handler,{chunks:stream})
+ assert.equal(res.statusCode,413);assert.equal(res.headers.Connection,'close');assert.equal(req.destroyed,true)
+})
+test('oversized content length is rejected before reading',async()=>{
+ const handler=createClassifyHandler({GROQ_API_KEY:'key'})
+ assert.equal((await testRequest(handler,{headers:{'content-length':'24001'}})).res.statusCode,413)
+})
+test('upload abort is not logged as a provider failure',async()=>{
+ const logs=[]
+ const handler=createClassifyHandler({GROQ_API_KEY:'key'},async()=>{assert.fail('No provider call')},{error(...args){logs.push(args)}})
+ const stream=Readable.from((async function*(){yield 'abc';throw new Error('client aborted')})())
+ const {res}=await testRequest(handler,{chunks:stream})
+ assert.equal(res.statusCode,400);assert.equal(logs.length,0)
+})
+for(const code of ['bad_request','payload_too_large']) {
+ test(`route preserves ${code}`,async()=>assert.equal((await request('{"message":"hello"}',{classify:async()=>{throw Object.assign(new Error(),{code})}})).res.body.code,code))
+}

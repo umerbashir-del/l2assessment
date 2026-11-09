@@ -1,4 +1,8 @@
 export const fallbackReasons = {
+ bad_request: 'Groq rejected the AI request configuration. Local rules were used.',
+ payload_too_large: 'Groq rejected the request size. Local rules were used.',
+ rate_limited: 'The local AI request limit was reached. Try again in a minute.',
+ busy: 'The local AI backend is busy. Try again shortly.',
  missing_configuration: 'AI is not configured on the local backend.',
  network: 'The local backend could not complete its connection to Groq.',
  timeout: 'The AI request timed out.',
@@ -11,4 +15,3 @@ export const fallbackReasons = {
  request_rejected: 'The AI backend rejected this request.',
 }
 export function fallbackDescription(code) { return fallbackReasons[code] || 'AI could not be used for this analysis.' }
-

@@ -1,0 +1,2 @@
+export const failureCodes = ['missing_configuration', 'authentication', 'model_unavailable', 'rate_limit', 'bad_request', 'payload_too_large', 'provider_unavailable', 'invalid_result', 'network', 'timeout', 'rate_limited', 'busy']
+export const validationReasons = ['invalid_issues', 'invalid_schema', 'invalid_category', 'duplicate_category', 'ungrounded_evidence', 'inactive_or_uncertain_evidence', 'conflicting_categories', 'malformed_response_json', 'malformed_model_json', 'truncated_response', 'incomplete_or_refused_response', 'response_too_large']
