@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local secrets (keep the public template)
+.env
+.env.*
+!.env.example

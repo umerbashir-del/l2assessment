@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { categorizeMessage } from './llmHelper.js'
-for (const code of ['missing_configuration','timeout','invalid_result','authentication','model_unavailable','rate_limit','provider_unavailable']) {
+for (const code of ['missing_configuration','network','timeout','invalid_result','authentication','model_unavailable','rate_limit','provider_unavailable']) {
  test(`explains ${code}`, async () => {
   const result = await categorizeMessage('My payment failed.', async () => ({ok:false,status:503,json:async()=>({code})}))
   assert.equal(result.source,'local'); assert.equal(result.fallbackCode,code); assert.ok(result.fallbackReason)
@@ -16,3 +16,4 @@ test('timeout explanation', async()=>{
  const result=await categorizeMessage('Hello',async()=>{throw Object.assign(new Error(),{name:'TimeoutError'})})
  assert.equal(result.fallbackCode,'timeout')
 })
+

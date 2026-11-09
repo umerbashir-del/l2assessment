@@ -1,5 +1,6 @@
 export const fallbackReasons = {
  missing_configuration: 'AI is not configured on the local backend.',
+ network: 'The local backend could not complete its connection to Groq.',
  timeout: 'The AI request timed out.',
  invalid_result: 'The AI response failed validation or was incomplete.',
  authentication: 'Groq rejected the API credentials.',
@@ -10,3 +11,4 @@ export const fallbackReasons = {
  request_rejected: 'The AI backend rejected this request.',
 }
 export function fallbackDescription(code) { return fallbackReasons[code] || 'AI could not be used for this analysis.' }
+
