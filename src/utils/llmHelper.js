@@ -1,30 +1,21 @@
-import Groq from 'groq-sdk'
-import { categorizeLocally } from './categoryFallback'
-
-/** Categorize with Groq when configured, otherwise use transparent local rules. */
-export async function categorizeMessage(message) {
-  const apiKey = import.meta.env.VITE_GROQ_API_KEY
-  if (!apiKey) return categorizeLocally(message)
-
-  try {
-    const groq = new Groq({ apiKey, dangerouslyAllowBrowser: true })
-    const response = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      messages: [{ role: 'user', content: `Categorize this customer support message: ${message}` }],
-      temperature: 0.7,
-    })
-
-    const content = response.choices[0].message.content
-    const lower = content.toLowerCase()
-    let category = 'Unknown'
-    if (lower.includes('billing')) category = 'Billing Issue'
-    else if (lower.includes('technical') || lower.includes('bug')) category = 'Technical Problem'
-    else if (lower.includes('feature')) category = 'Feature Request'
-    else if (lower.includes('inquiry') || lower.includes('question')) category = 'General Inquiry'
-
-    return { category, reasoning: content, source: 'ai' }
-  } catch (error) {
-    console.warn('Groq API failed; using local categorization:', error.message)
-    return categorizeLocally(message)
+import { categorizeLocally } from './categoryFallback.js'
+import { fallbackDescription, fallbackReasons } from './fallbackReasons.js'
+export async function categorizeMessage(message, fetcher = globalThis.fetch) {
+ let fallbackCode = 'backend_unavailable'
+ try {
+  const response = await fetcher('/api/classify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message }), signal: AbortSignal.timeout(25000) })
+  if (!response.ok) {
+   fallbackCode = response.status >= 400 && response.status < 500 ? 'request_rejected' : 'backend_unavailable'
+   const body = await response.json().catch(() => ({}))
+   if (Object.hasOwn(fallbackReasons, body.code)) fallbackCode = body.code
+   throw new Error('AI unavailable')
   }
+  fallbackCode = 'invalid_result'
+  const result = await response.json()
+  if (result.source !== 'ai' || !Array.isArray(result.categories) || !result.categories.length || !Array.isArray(result.issues) || typeof result.reasoning !== 'string') throw new Error('Invalid response')
+  return result
+ } catch (error) {
+  if (error.name === 'TimeoutError' || error.name === 'AbortError') fallbackCode = 'timeout'
+  return { ...categorizeLocally(message), fallbackCode, fallbackReason: fallbackDescription(fallbackCode) }
+ }
 }
