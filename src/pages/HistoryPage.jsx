@@ -1,19 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
+import { sortHistoryNewestFirst } from '../utils/historyMetrics'
 
 function HistoryPage() {
-  const [history, setHistory] = useState([])
+  const [history, setHistory] = useState(() =>
+    JSON.parse(localStorage.getItem('triageHistory') || '[]')
+  )
   const [filter, setFilter] = useState('all')
   const [expandedIndex, setExpandedIndex] = useState(null)
-
-  useEffect(() => {
-    loadHistory()
-  }, [])
-
-  const loadHistory = () => {
-    const savedHistory = JSON.parse(localStorage.getItem('triageHistory') || '[]')
-    setHistory(savedHistory)
-  }
 
   const clearHistory = () => {
     if (window.confirm('Are you sure you want to clear all history?')) {
@@ -22,9 +16,7 @@ function HistoryPage() {
     }
   }
 
-  const sortedHistory = [...history].sort((a, b) => 
-    a.message.localeCompare(b.message)
-  )
+  const sortedHistory = sortHistoryNewestFirst(history)
   
   const filteredHistory = filter === 'all' 
     ? sortedHistory 
@@ -116,8 +108,8 @@ function HistoryPage() {
                     <div className="text-gray-800 font-medium mb-2">
                       "{item.message.substring(0, 100)}{item.message.length > 100 ? '...' : ''}"
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-semibold">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`text-xs px-3 py-1 rounded-full font-semibold ${item.category === 'Needs Review' ? 'bg-amber-100 text-amber-900' : 'bg-blue-100 text-blue-800'}`}>
                         {item.category}
                       </span>
                       <span className={`text-xs px-3 py-1 rounded-full font-semibold ${
@@ -126,6 +118,9 @@ function HistoryPage() {
                         'bg-green-200 text-green-900'
                       }`}>
                         {item.urgency} Urgency
+                      </span>
+                      <span className="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
+                        {item.source === 'local' ? 'Local fallback' : item.source === 'ai' ? 'AI classification' : 'Source unknown'}
                       </span>
                     </div>
                   </div>
@@ -151,7 +146,9 @@ function HistoryPage() {
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs font-semibold text-gray-600 mb-1">AI Reasoning</div>
+                      <div className="text-xs font-semibold text-gray-600 mb-1">
+                        {item.source === 'local' ? 'Local Rule Explanation' : item.source === 'ai' ? 'AI Reasoning' : 'Saved Explanation (source unknown)'}
+                      </div>
                       <div className="bg-white p-3 rounded border border-gray-200">
                         <div className="prose prose-sm max-w-none text-gray-700">
                           <ReactMarkdown>

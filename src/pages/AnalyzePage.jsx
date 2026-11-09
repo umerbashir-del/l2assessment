@@ -29,13 +29,13 @@ function AnalyzePage() {
     
     try {
       // Run categorization (LLM call)
-      const { category, reasoning } = await categorizeMessage(message)
+      const { category, reasoning, source } = await categorizeMessage(message)
       
       // Calculate urgency (rule-based)
       const urgency = calculateUrgency(message)
       
       // Get recommended action (template-based)
-      const recommendedAction = getRecommendedAction(category)
+      const recommendedAction = getRecommendedAction(category, urgency, message)
       
       const analysisResult = {
         message,
@@ -43,6 +43,7 @@ function AnalyzePage() {
         urgency,
         recommendedAction,
         reasoning,
+        source,
         timestamp: new Date().toISOString()
       }
 
@@ -132,8 +133,13 @@ function AnalyzePage() {
             <div className="space-y-4">
               <div>
                 <div className="text-sm font-semibold text-gray-600 mb-1">Category</div>
-                <div className="inline-block bg-blue-100 text-blue-800 px-4 py-2 rounded-lg font-semibold">
-                  {results.category}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className={`inline-block px-4 py-2 rounded-lg font-semibold ${results.category === 'Needs Review' ? 'bg-amber-100 text-amber-900' : 'bg-blue-100 text-blue-800'}`}>
+                    {results.category}
+                  </div>
+                  <span className="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
+                    {results.source === 'local' ? 'Local fallback' : 'AI classification'}
+                  </span>
                 </div>
               </div>
 
@@ -156,7 +162,12 @@ function AnalyzePage() {
               </div>
 
               <div>
-                <div className="text-sm font-semibold text-gray-600 mb-1">AI Reasoning</div>
+                <div className="text-sm font-semibold text-gray-600 mb-1">
+                  {results.source === 'local' ? 'Local Rule Explanation' : 'AI Reasoning'}
+                </div>
+                {results.source === 'local' && (
+                  <p className="text-sm text-amber-800 mb-2">Groq was unavailable. This category came from local rules.</p>
+                )}
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <div className="prose prose-sm max-w-none text-gray-700">
                     <ReactMarkdown>
@@ -170,7 +181,7 @@ function AnalyzePage() {
             <div className="mt-6 pt-4 border-t border-gray-200">
               <button
                 onClick={() => {
-                  const text = `Category: ${results.category}\nUrgency: ${results.urgency}\nRecommendation: ${results.recommendedAction}\n\nReasoning: ${results.reasoning}`
+                  const text = `Category: ${results.category}\nUrgency: ${results.urgency}\nRecommendation: ${results.recommendedAction}\nSource: ${results.source === 'local' ? 'Local fallback' : 'AI classification'}\n\nReasoning: ${results.reasoning}`
                   navigator.clipboard.writeText(text)
                   alert('Results copied to clipboard!')
                 }}
